@@ -43,6 +43,17 @@ MathematicalNeuralNetwork/
 
 
 
-<pre> ```text MathematicalNeuralNetwork/ ├── README.md # You are here! ├── docs/ # Mathematical derivations │ ├── linear-regression-derivation.pdf │ ├── logistic-regression-derivation.pdf │ └── neural-network-backpropagation.pdf ├── presentation/ # Interactive experience │ └── index.html # Main ├── notebooks/ # Implementation │ └── NeuralNetworkCode-Walkthrough. # Complete implementation ``` </pre>
+```
+MathematicalNeuralNetwork/
+├── README.md                          # You are here!
+├── docs/                              # Mathematical derivations
+│   ├── linear-regression-derivation.pdf
+│   ├── logistic-regression-derivation.pdf
+│   └── neural-network-backpropagation.pdf
+├── presentation/                      # Interactive experience
+│   └── index.html                     # Main
+├── notebooks/                         # Implementation
+│   └── NeuralNetworkCode-Walkthrough. # Complete implementation
+```
 
 
