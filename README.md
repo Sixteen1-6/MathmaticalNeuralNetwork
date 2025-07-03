@@ -22,9 +22,9 @@ Also there is a section on the complete transformation of the mathmatical deriva
 
 MathematicalNeuralNetwork/ 
 
-├── 📄 README.md                          # You are here!
+├── 📄 README.md                       # You are here!
 
-├──  docs/                               # Mathematical derivations
+├──  docs/                              # Mathematical derivations
 
 │       ├──  linear-regression-derivation.pdf
 
@@ -33,12 +33,12 @@ MathematicalNeuralNetwork/
 │       └──  neural-network-backpropagation.pdf
 
 
-├──  presentation/                         # Interactive experience
+├──  presentation/                          # Interactive experience
 
-│     ├──  index.html                       # Main    
+│       ├──  index.html                      # Main    
 
 ├──  notebooks/                            # Implementation
 
-│    ├──  NeuralNetworkCode-Walkthrough.      # Complete implementation
+│       ├──  NeuralNetworkCode-Walkthrough.   # Complete implementation
 
 
