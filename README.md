@@ -21,6 +21,7 @@ Also there is a section on the complete transformation of the mathmatical deriva
 
 
 MathematicalNeuralNetwork/
+ 
 ├── 📄 README.md                          # You are here!
 ├──  docs/                              # Mathematical derivations
 │   ├──  linear-regression-derivation.pdf
