@@ -20,15 +20,25 @@ Otherwise, you can explore the complete mathematical derivations found in the do
 Also there is a section on the complete transformation of the mathmatical derivations to python code directly. This would be beneficial for a complete beginner to understand the foundations.
 
 
-MathematicalNeuralNetwork/
- 
+MathematicalNeuralNetwork/ 
+
 ├── 📄 README.md                          # You are here!
-├──  docs/                              # Mathematical derivations
-│   ├──  linear-regression-derivation.pdf
-│   ├──  logistic-regression-derivation.pdf
-│   └──  neural-network-backpropagation.pdf
-├──  presentation/                       # Interactive experience
-│   ├──  index.html                     # Main                     
-├──  notebooks/                         # Implementation
-│   ├──  NeuralNetworkCode-Walkthrough.           # Complete implementation
+
+├──  docs/                               # Mathematical derivations
+
+│       ├──  linear-regression-derivation.pdf
+
+│       ├──  logistic-regression-derivation.pdf
+
+│       └──  neural-network-backpropagation.pdf
+
+
+├──  presentation/                         # Interactive experience
+
+│     ├──  index.html                       # Main    
+
+├──  notebooks/                            # Implementation
+
+│    ├──  NeuralNetworkCode-Walkthrough.      # Complete implementation
+
 
