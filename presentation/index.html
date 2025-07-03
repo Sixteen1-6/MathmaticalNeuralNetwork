@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transforming the Black Box into a Glass Box</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            cursor: none;
+            background: #000;
+            color: white;
+        }
+
+        .presentation-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .background-viz {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(ellipse at 20% 30%, rgba(0, 50, 100, 0.4) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 70%, rgba(50, 0, 100, 0.4) 0%, transparent 50%),
+                linear-gradient(45deg, #0a0a0a, #1a1a2e, #16213e, #0f3460);
+        }
+
+        .neural-network {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .node {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid;
+            animation: nodePulse 6s ease-in-out infinite;
+        }
+
+        .input-node {
+            width: 16px;
+            height: 16px;
+            background: rgba(0, 255, 100, 0.9);
+            border-color: #00ff64;
+            box-shadow: 0 0 15px rgba(0, 255, 100, 0.6);
+        }
+
+        .hidden1-node {
+            width: 18px;
+            height: 18px;
+            background: rgba(0, 150, 255, 0.9);
+            border-color: #0096ff;
+            box-shadow: 0 0 18px rgba(0, 150, 255, 0.6);
+        }
+
+        .hidden2-node {
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 100, 255, 0.9);
+            border-color: #ff64ff;
+            box-shadow: 0 0 20px rgba(255, 100, 255, 0.6);
+        }
+
+        .hidden3-node {
+            width: 18px;
+            height: 18px;
+            background: rgba(255, 200, 0, 0.9);
+            border-color: #ffc800;
+            box-shadow: 0 0 18px rgba(255, 200, 0, 0.6);
+        }
+
+        .output-node {
+            width: 16px;
+            height: 16px;
+            background: rgba(255, 50, 50, 0.9);
+            border-color: #ff3232;
+            box-shadow: 0 0 15px rgba(255, 50, 50, 0.6);
+        }
+
+        .wire {
+            position: absolute;
+            height: 1px;
+            background: rgba(0, 255, 255, 0.4);
+            animation: wireFlow 8s linear infinite;
+            transform-origin: left center;
+        }
+
+        .wire-thick {
+            height: 2px;
+            background: rgba(255, 255, 255, 0.6);
+            animation: wireFlowBright 6s linear infinite;
+        }
+
+        .grid-background {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                linear-gradient(90deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%),
+                linear-gradient(0deg, transparent 98%, rgba(0, 255, 255, 0.1) 100%);
+            background-size: 60px 60px;
+            animation: gridPulse 12s ease-in-out infinite;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+            animation: particleMove 10s linear infinite;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(
+                180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+                transparent 0%,
+                transparent 15%,
+                rgba(0, 0, 0, 0.95) 40%,
+                #000 100%
+            );
+            z-index: 50;
+            transition: background 0.1s ease;
+        }
+
+        .cursor-light {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 200;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
+        }
+
+        .slide {
+            position: relative;
+            z-index: 100;
+            width: 90%;
+            max-width: 1200px;
+            height: 85%;
+            background: rgba(0, 20, 40, 0.95);
+            border: 2px solid rgba(0, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 40px;
+            display: none;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 50px rgba(0, 255, 255, 0.2);
+        }
+
+        .slide.active {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .title-slide {
+            position: relative;
+            z-index: 100;
+            width: 80%;
+            max-width: 80%;
+            line-height: 1.2;
+            text-align: center;
+            display: none;
+        }
+
+        .title-slide.active {
+            display: block;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .main-title {
+            font-size: 4rem;
+            font-weight: 900;
+            text-align: center;
+            background: linear-gradient(135deg, 
+                #ff006e, #8338ec, #3a86ff, #06ffa5, #ffbe0b, #ff006e);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 
+                0 0 30px rgba(255, 255, 255, 0.8),
+                0 0 60px rgba(138, 56, 236, 0.6),
+                0 0 90px rgba(255, 0, 110, 0.4);
+            animation: gradientShift 6s ease-in-out infinite, textGlow 3s ease-in-out infinite alternate;
+            letter-spacing: 2px;
+            font-family: 'Arial Black', sans-serif;
+            text-transform: uppercase;
+            margin-bottom: 40px;
+        }
+
+        .subtitle {
+            font-size: 1.8rem;
+            color: #06ffa5;
+            margin: 20px 0;
+            text-align: center;
+            text-shadow: 0 0 20px rgba(6, 255, 165, 0.5);
+        }
+
+        .author {
+            font-size: 1.4rem;
+            color: #3a86ff;
+            margin: 30px 0;
+            text-align: center;
+            text-shadow: 0 0 15px rgba(58, 134, 255, 0.5);
+        }
+
+        .slide h1 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            background: linear-gradient(135deg, #ff006e, #8338ec, #3a86ff, #06ffa5);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease-in-out infinite;
+            text-align: center;
+        }
+
+        .slide h2 {
+            font-size: 1.8rem;
+            color: #06ffa5;
+            margin: 25px 0 15px 0;
+            border-bottom: 2px solid rgba(6, 255, 165, 0.3);
+            padding-bottom: 5px;
+        }
+
+        .slide h3 {
+            font-size: 1.4rem;
+            color: #3a86ff;
+            margin: 20px 0 10px 0;
+        }
+
+        .equation {
+            background: rgba(0, 50, 100, 0.3);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        .key-insight {
+            background: rgba(255, 100, 255, 0.1);
+            border-left: 4px solid #ff64ff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+
+        .step-box {
+            background: rgba(50, 0, 100, 0.2);
+            border: 1px solid rgba(138, 56, 236, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .matrix {
+            display: inline-block;
+            border-left: 2px solid #06ffa5;
+            border-right: 2px solid #06ffa5;
+            padding: 5px 10px;
+            margin: 0 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .highlight {
+            background: rgba(255, 255, 0, 0.2);
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .formula-step {
+            margin: 15px 0;
+            padding: 15px;
+            border-left: 3px solid #3a86ff;
+            background: rgba(58, 134, 255, 0.1);
+        }
+
+        .derivation-box {
+            background: rgba(0, 100, 50, 0.2);
+            border: 1px solid rgba(0, 255, 100, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .dimensions-table {
+            background: rgba(100, 0, 100, 0.2);
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .navigation {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            background: rgba(0, 255, 255, 0.2);
+            border: 2px solid rgba(0, 255, 255, 0.5);
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-btn:hover {
+            background: rgba(0, 255, 255, 0.4);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+            transform: translateY(-2px);
+            cursor: pointer;
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .slide-counter {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            z-index: 200;
+            background: rgba(0, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        ul, ol {
+            margin-left: 20px;
+            margin-top: 10px;
+        }
+
+        li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+
+        .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 20px 0;
+        }
+
+        .three-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+
+        @keyframes wireFlow {
+            0% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+            100% { opacity: 0.3; }
+        }
+
+        @keyframes wireFlowBright {
+            0% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { opacity: 0.4; }
+        }
+
+        @keyframes gridPulse {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 0.4; }
+        }
+
+        @keyframes particleMove {
+            0% { opacity: 0; transform: translateX(-20px); }
+            20% { opacity: 0.8; }
+            80% { opacity: 0.8; }
+            100% { opacity: 0; transform: translateX(120vw); }
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes textGlow {
+            from { 
+                text-shadow: 
+                    0 0 30px rgba(255, 255, 255, 0.8),
+                    0 0 60px rgba(138, 56, 236, 0.6),
+                    0 0 90px rgba(255, 0, 110, 0.4);
+            }
+            to { 
+                text-shadow: 
+                    0 0 50px rgba(255, 255, 255, 1),
+                    0 0 80px rgba(138, 56, 236, 0.8),
+                    0 0 120px rgba(255, 0, 110, 0.6);
+            }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .main-title { font-size: 2.5rem; }
+            .slide h1 { font-size: 2rem; }
+            .slide { padding: 20px; width: 95%; height: 80%; }
+            .two-column, .three-column { grid-template-columns: 1fr; }
+            .equation { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="presentation-container">
+        <div class="background-viz"></div>
+        <div class="grid-background"></div>
+        <div class="neural-network" id="neuralNetwork"></div>
+        
+        <div class="slide-counter">
+            <span id="slideNumber">1</span> / <span id="totalSlides">25</span>
+        </div>
+
+        <!-- Title Slide -->
+        <div class="title-slide active" id="slide0">
+            <h1 class="main-title">Transforming the Black Box into a Glass Box</h1>
+            <p class="subtitle">A Complete Mathematical Journey Through Machine Learning</p>
+            <p class="author">by Shubhanshu Pokharel</p>
+        </div>
+
+        <!-- Slide 1: Overview -->
+        <div class="slide" id="slide1">
+            <h1>A Step-by-Step Mathematical Journey</h1>
+            <div class="key-insight">
+                <h2>From Black Box to Glass Box</h2>
+                <p>We'll build understanding from ground up: Linear Regression → Logistic Regression → Neural Networks</p>
+            </div>
+            <div class="step-box">
+                <h3>What We'll Learn:</h3>
+                <ul>
+                    <li><strong>Linear Regression:</strong> Finding the best line through data points using matrices</li>
+                    <li><strong>Logistic Regression:</strong> Binary classification with sigmoid and cross-entropy</li>
+                    <li><strong>Neural Networks:</strong> Stacking operations to learn complex patterns</li>
+                    <li><strong>Backpropagation:</strong> How networks learn through gradient computation</li>
+                </ul>
+            </div>
+            <div class="key-insight">
+                <p><strong>Universal Pattern:</strong> All methods follow: Model → Loss → Gradient → Update</p>
+            </div>
+        </div>
+
+        <!-- Slide 2: Linear Regression Problem Setup -->
+        <div class="slide" id="slide2">
+            <h1>Linear Regression: Problem Setup</h1>
+            <div class="step-box">
+                <h3>Given:</h3>
+                <p>Dataset {(x₁, y₁), (x₂, y₂), ..., (xₙ, yₙ)} where xᵢ ∈ ℝᵈ and yᵢ ∈ ℝ</p>
+            </div>
+            
+            <div class="step-box">
+                <h3>Variable Definitions:</h3>
+                <ul>
+                    <li><strong>N</strong> = number of samples</li>
+                    <li><strong>d</strong> = number of features</li>
+                    <li><strong>xᵢ ∈ ℝᵈˣ¹</strong> = feature vector for sample i</li>
+                    <li><strong>yᵢ ∈ ℝ</strong> = target value for sample i</li>
+                    <li><strong>w ∈ ℝᵈˣ¹</strong> = weight vector</li>
+                    <li><strong>w₀ ∈ ℝ</strong> = bias/intercept term</li>
+                </ul>
+            </div>
+
+            <div class="step-box">
+                <h3>Hypothesis Function:</h3>
+                <div class="equation">
+                    f_θ(xᵢ) = wᵀxᵢ + w₀ = w₁xᵢ₁ + w₂xᵢ₂ + ... + wₓxᵢₓ + w₀
+                </div>
+                <p>where θ = (w, w₀) are trainable parameters</p>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Goal:</strong> Find optimal parameters θ* that minimize prediction error</p>
+            </div>
+        </div>
+
+        <!-- Slide 3: Residuals and Loss Concept -->
+        <div class="slide" id="slide3">
+            <h1>Understanding Residuals and Loss</h1>
+            
+            <div class="derivation-box">
+                <h3>Residuals (Errors):</h3>
+                <div class="equation">
+                    eᵢ = yᵢ - ŷᵢ = yᵢ - (wᵀxᵢ + w₀)
+                </div>
+                <p>Each residual measures how far off our prediction is from the true value.</p>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Mean Squared Error (MSE):</h3>
+                <div class="equation">
+                    ℒ(θ) = (1/N)∑ᵢ₌₁ᴺ eᵢ² = (1/N)∑ᵢ₌₁ᴺ (yᵢ - ŷᵢ)²
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <h3>Why do we need to derive and minimize loss?</h3>
+                <p>To find the optimal parameters θ*, we use calculus. The minimum of a function occurs where its derivative equals zero. By taking the derivative of the loss function with respect to our parameters and setting it to zero, we can solve for the parameter values that minimize our prediction error.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Why Square the Errors?</h3>
+                <ul>
+                    <li>Ensures positive values (treats over- and under-predictions equally)</li>
+                    <li>Penalizes large errors more heavily than small ones</li>
+                    <li>Results in a convex function (single global minimum)</li>
+                    <li>Mathematically tractable (differentiable everywhere)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 4: Augmented Notation -->
+        <div class="slide" id="slide4">
+            <h1>Augmented Notation for Matrix Operations</h1>
+            
+            <div class="step-box">
+                <h3>To incorporate bias term elegantly:</h3>
+                <div class="formula-step">
+                    <h4>Augmented feature vector:</h4>
+                    <div class="equation">
+                        x̃ᵢ = <span class="matrix">1<br>xᵢ</span> ∈ ℝ⁽ᵈ⁺¹⁾ˣ¹
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <h4>Augmented weight vector:</h4>
+                    <div class="equation">
+                        w̃ = <span class="matrix">w₀<br>w</span> ∈ ℝ⁽ᵈ⁺¹⁾ˣ¹
+                    </div>
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Simplified hypothesis:</h3>
+                <div class="equation">
+                    f_θ(xᵢ) = x̃ᵢᵀw̃ = w̃ᵀx̃ᵢ
+                </div>
+                <p>Now bias is automatically included in the matrix multiplication!</p>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Benefit:</strong> This augmented notation allows us to handle bias and weights uniformly, simplifying the mathematics and implementation.</p>
+            </div>
+        </div>
+
+        <!-- Slide 5: Design Matrix Construction -->
+        <div class="slide" id="slide5">
+            <h1>Design Matrix Construction</h1>
+            
+            <div class="step-box">
+                <h3>Stack all augmented samples into design matrix:</h3>
+                <div class="equation">
+                    A = <span class="matrix">— x̃₁ᵀ —<br>— x̃₂ᵀ —<br>⋮<br>— x̃ₙᵀ —</span> = <span class="matrix">1  x₁₁  x₁₂  ⋯  x₁ₓ<br>1  x₂₁  x₂₂  ⋯  x₂ₓ<br>⋮   ⋮    ⋮   ⋱   ⋮<br>1  xₙ₁  xₙ₂  ⋯  xₙₓ</span> ∈ ℝᴺˣ⁽ᵈ⁺¹⁾
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3>Target vector:</h3>
+                <div class="equation">
+                    y = <span class="matrix">y₁<br>y₂<br>⋮<br>yₙ</span> ∈ ℝᴺˣ¹
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Vectorized predictions:</h3>
+                <div class="equation">
+                    ŷ = Aw̃ ∈ ℝᴺˣ¹
+                </div>
+                <p>This single matrix multiplication computes predictions for ALL samples simultaneously!</p>
+            </div>
+
+            <div class="dimensions-table">
+                <h3>Dimension Verification:</h3>
+                <ul>
+                    <li>A: ℝᴺˣ⁽ᵈ⁺¹⁾</li>
+                    <li>w̃: ℝ⁽ᵈ⁺¹⁾ˣ¹</li>
+                    <li>ŷ = Aw̃: ℝᴺˣ¹ ✓</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 6: Explicit Matrix Multiplication -->
+        <div class="slide" id="slide6">
+            <h1>Explicit Matrix Multiplication</h1>
+            
+            <div class="derivation-box">
+                <h3>Breaking down ŷ = Aw̃:</h3>
+                <div class="equation">
+                    ŷ = <span class="matrix">1  x₁₁  x₁₂  ⋯  x₁ₓ<br>1  x₂₁  x₂₂  ⋯  x₂ₓ<br>⋮   ⋮    ⋮   ⋱   ⋮<br>1  xₙ₁  xₙ₂  ⋯  xₙₓ</span>ₙₓ₍ₓ₊₁₎ <span class="matrix">w₀<br>w₁<br>w₂<br>⋮<br>wₓ</span>₍ₓ₊₁₎ₓ₁
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>Result:</h3>
+                <div class="equation">
+                    ŷ = <span class="matrix">w₀ + w₁x₁₁ + w₂x₁₂ + ⋯ + wₓx₁ₓ<br>w₀ + w₁x₂₁ + w₂x₂₂ + ⋯ + wₓx₂ₓ<br>⋮<br>w₀ + w₁xₙ₁ + w₂xₙ₂ + ⋯ + wₓxₙₓ</span>ₙₓ₁
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Insight:</strong> Each row gives us the prediction for one sample. Matrix multiplication elegantly computes all predictions at once, making the computation efficient and the mathematics clean.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Residual Vector:</h3>
+                <div class="equation">
+                    e = y - ŷ = y - Aw̃ ∈ ℝᴺˣ¹
+                </div>
+                <p>Component-wise: eᵢ = yᵢ - ŷᵢ for each sample i</p>
+            </div>
+        </div>
+
+        <!-- Slide 7: Loss Function in Matrix Form -->
+        <div class="slide" id="slide7">
+            <h1>Loss Function in Matrix Form</h1>
+            
+            <div class="derivation-box">
+                <h3>Mean Squared Error:</h3>
+                <div class="equation">
+                    ℒ(w̃) = (1/N)eᵀe = (1/N)∑ᵢ₌₁ᴺ(yᵢ - ŷᵢ)² = (1/N)||y - Aw̃||₂²
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>Breaking down eᵀe:</h3>
+                <div class="equation">
+                    eᵀe = [e₁, e₂, ..., eₙ] <span class="matrix">e₁<br>e₂<br>⋮<br>eₙ</span> = e₁² + e₂² + ⋯ + eₙ²
+                </div>
+                <p>This gives us the sum of squared errors</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Why this matrix formulation?</h3>
+                <ul>
+                    <li><strong>Efficiency:</strong> Single matrix operation instead of loops</li>
+                    <li><strong>Elegance:</strong> Clean mathematical notation</li>
+                    <li><strong>Vectorization:</strong> Modern computers/GPUs excel at matrix operations</li>
+                    <li><strong>Generalization:</strong> Same form works for any number of samples/features</li>
+                </ul>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Next Step:</strong> To minimize ℒ(w̃), we need to find where ∇ℒ = 0</p>
+            </div>
+        </div>
+
+        <!-- Slide 8: Gradient Derivation via Chain Rule -->
+        <div class="slide" id="slide8">
+            <h1>Gradient Derivation via Chain Rule</h1>
+            
+            <div class="key-insight">
+                <h3>Chain Rule Setup:</h3>
+                <div class="equation">
+                    ∇ℒ = ∂ℒ/∂w̃ = (∂ℒ/∂e) · (∂e/∂w̃)
+                </div>
+                <p>We'll compute this as a matrix product where dimensions must align correctly.</p>
+            </div>
+
+            <div class="dimensions-table">
+                <h3>Dimensional Analysis:</h3>
+                <ul>
+                    <li>∂ℒ/∂e will be a row vector: ℝ¹ˣᴺ</li>
+                    <li>∂e/∂w̃ will be a matrix: ℝᴺˣ⁽ᵈ⁺¹⁾</li>
+                    <li>Product gives: ℝ¹ˣ⁽ᵈ⁺¹⁾ (row vector)</li>
+                    <li>We'll transpose to get column gradient: ℝ⁽ᵈ⁺¹⁾ˣ¹</li>
+                </ul>
+            </div>
+
+            <div class="derivation-box">
+                <h3>First Factor: ∂ℒ/∂e</h3>
+                <p>Since ℒ = (1/N)eᵀe = (1/N)∑ᵢ₌₁ᴺ eᵢ²:</p>
+                <div class="equation">
+                    ∂ℒ/∂eᵢ = (2/N)eᵢ
+                </div>
+                <div class="equation">
+                    ∂ℒ/∂e = (2/N)[e₁, e₂, ..., eₙ] = (2/N)eᵀ ∈ ℝ¹ˣᴺ
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Second Factor: ∂e/∂w̃</h3>
+                <p>Since e = y - Aw̃ and y is constant:</p>
+                <div class="equation">
+                    ∂e/∂w̃ = -A ∈ ℝᴺˣ⁽ᵈ⁺¹⁾
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 9: Matrix Multiplication Details -->
+        <div class="slide" id="slide9">
+            <h1>Matrix Multiplication: Step by Step</h1>
+            
+            <div class="derivation-box">
+                <h3>Explicit Form:</h3>
+                <div class="equation">
+                    ∂ℒ/∂w̃ = (2/N) <span class="matrix">e₁  e₂  ⋯  eₙ</span>₁ₓₙ <span class="matrix">-1  -x₁₁  -x₁₂  ⋯  -x₁ₓ<br>-1  -x₂₁  -x₂₂  ⋯  -x₂ₓ<br>⋮    ⋮     ⋮    ⋱    ⋮<br>-1  -xₙ₁  -xₙ₂  ⋯  -xₙₓ</span>ₙₓ₍ₓ₊₁₎
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>Computing the Product:</h3>
+                <div class="equation">
+                    = -(2/N) <span class="matrix">e₁  e₂  ⋯  eₙ</span> <span class="matrix">1  x₁₁  x₁₂  ⋯  x₁ₓ<br>1  x₂₁  x₂₂  ⋯  x₂ₓ<br>⋮   ⋮    ⋮   ⋱   ⋮<br>1  xₙ₁  xₙ₂  ⋯  xₙₓ</span>
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>Result:</h3>
+                <div class="equation">
+                    = -(2/N) <span class="matrix">∑ᵢ₌₁ᴺ eᵢ  ∑ᵢ₌₁ᴺ eᵢxᵢ₁  ∑ᵢ₌₁ᴺ eᵢxᵢ₂  ⋯  ∑ᵢ₌₁ᴺ eᵢxᵢₓ</span>₁ₓ₍ₓ₊₁₎
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Compact Form:</h3>
+                <div class="equation">
+                    ∂ℒ/∂w̃ = -(2/N)eᵀA ∈ ℝ¹ˣ⁽ᵈ⁺¹⁾
+                </div>
+                <p>Each entry is a dot product between the error vector and one column of A</p>
+            </div>
+        </div>
+
+        <!-- Slide 10: Transpose to Column Gradient -->
+        <div class="slide" id="slide10">
+            <h1>Final Gradient Form</h1>
+            
+            <div class="derivation-box">
+                <h3>Transpose to Column Vector:</h3>
+                <div class="equation">
+                    ∇w̃ℒ = (∂ℒ/∂w̃)ᵀ = (-(2/N)eᵀA)ᵀ = -(2/N)AᵀE ∈ ℝ⁽ᵈ⁺¹⁾ˣ¹
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>Substituting e = y - Aw̃:</h3>
+                <div class="equation">
+                    ∇w̃ℒ = -(2/N)Aᵀ(y - Aw̃)
+                </div>
+                <div class="equation">
+                    = -(2/N)AᵀY + (2/N)AᵀAw̃
+                </div>
+                <div class="equation">
+                    = (2/N)Aᵀ(Aw̃ - y)
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Beautiful Result:</strong> The gradient has the same form as logistic regression! The error term (Aw̃ - y) shows how much our predictions deviate from true values, weighted by the input features.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Interpretation:</h3>
+                <p>Each component of the gradient tells us:</p>
+                <ul>
+                    <li>Direction to move each parameter</li>
+                    <li>Magnitude indicates sensitivity</li>
+                    <li>Larger errors contribute more to updates</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 11: Normal Equation Derivation -->
+        <div class="slide" id="slide11">
+            <h1>Normal Equation: Closed-Form Solution</h1>
+            
+            <div class="derivation-box">
+                <h3>Setting Gradient to Zero:</h3>
+                <p>For minimum, ∇w̃ℒ = 0:</p>
+                <div class="equation">
+                    (2/N)Aᵀ(Aw̃ - y) = 0
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>Simplifying Step by Step:</h3>
+                <div class="equation">
+                    Aᵀ(Aw̃ - y) = 0
+                </div>
+                <div class="equation">
+                    AᵀAw̃ - AᵀY = 0
+                </div>
+                <div class="equation">
+                    AᵀAw̃ = AᵀY
+                </div>
+                <p>This is the <strong>Normal Equation</strong></p>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Solving for w̃*:</h3>
+                <p>If AᵀA is invertible (full column rank):</p>
+                <div class="formula-step">
+                    <p><strong>Step 1:</strong> Multiply both sides by (AᵀA)⁻¹:</p>
+                    <div class="equation">
+                        (AᵀA)⁻¹(AᵀA)w̃ = (AᵀA)⁻¹AᵀY
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <p><strong>Step 2:</strong> Apply identity (AᵀA)⁻¹(AᵀA) = I:</p>
+                    <div class="equation">
+                        Iw̃ = (AᵀA)⁻¹AᵀY
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <p><strong>Step 3:</strong> Since Iw̃ = w̃:</p>
+                    <div class="equation">
+                        <span class="highlight">w̃* = (AᵀA)⁻¹AᵀY</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 12: Dimension Verification -->
+        <div class="slide" id="slide12">
+            <h1>Dimension Verification & Properties</h1>
+            
+            <div class="dimensions-table">
+                <h3>Dimension Check:</h3>
+                <div class="three-column">
+                    <div>
+                        <h4>Matrices:</h4>
+                        <ul>
+                            <li>A: ℝᴺˣ⁽ᵈ⁺¹⁾</li>
+                            <li>Aᵀ: ℝ⁽ᵈ⁺¹⁾ˣᴺ</li>
+                            <li>AᵀA: ℝ⁽ᵈ⁺¹⁾ˣ⁽ᵈ⁺¹⁾</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Vectors:</h4>
+                        <ul>
+                            <li>y: ℝᴺˣ¹</li>
+                            <li>Aᵀy: ℝ⁽ᵈ⁺¹⁾ˣ¹</li>
+                            <li>w̃*: ℝ⁽ᵈ⁺¹⁾ˣ¹ ✓</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4>Operations:</h4>
+                        <ul>
+                            <li>(AᵀA)⁻¹: ℝ⁽ᵈ⁺¹⁾ˣ⁽ᵈ⁺¹⁾</li>
+                            <li>Final result: ℝ⁽ᵈ⁺¹⁾ˣ¹</li>
+                            <li>Dimensions work! ✓</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3>Separating Weights and Bias:</h3>
+                <p>From w̃* = [w₀*, w*]ᵀ, we can derive:</p>
+                <div class="equation">
+                    w₀* = ȳ - (w*)ᵀx̄
+                </div>
+                <div class="equation">
+                    w* = (XᵀX)⁻¹Xᵀ(y - ȳ1)
+                </div>
+                <p>where ȳ is mean of targets, x̄ is mean of features, X is A without bias column</p>
+            </div>
+
+            <div class="key-insight">
+                <h3>Why Linear Regression is Special:</h3>
+                <ul>
+                    <li><strong>Closed-form solution:</strong> No iteration needed</li>
+                    <li><strong>Global optimum:</strong> Convex function guarantees unique minimum</li>
+                    <li><strong>Computational efficiency:</strong> One matrix operation gives optimal solution</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 13: Logistic Regression Problem Setup -->
+        <div class="slide" id="slide13">
+            <h1>Logistic Regression: Binary Classification</h1>
+            
+            <div class="step-box">
+                <h3>The Problem:</h3>
+                <p>Linear regression predicts any real number, but for classification we need probabilities between 0 and 1.</p>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Problem Setup:</h3>
+                <p>We observe N labeled samples (xᵢ, yᵢ) with xᵢ ∈ ℝᵈ and yᵢ ∈ {0,1}</p>
+                <div class="equation">
+                    P(yᵢ=1|xᵢ;θ) = ŷᵢ = σ(zᵢ), where zᵢ = wᵀxᵢ + w₀
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>The Sigmoid Function:</h3>
+                <div class="equation">
+                    σ(z) = 1/(1 + e⁻ᶻ)
+                </div>
+                <p><strong>Properties:</strong></p>
+                <ul>
+                    <li>Maps any real number to (0, 1)</li>
+                    <li>S-shaped curve (smooth transition)</li>
+                    <li>σ(0) = 0.5 (decision boundary)</li>
+                    <li>As z → ∞, σ(z) → 1</li>
+                    <li>As z → -∞, σ(z) → 0</li>
+                </ul>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Interpretation:</strong> ŷᵢ represents the probability that example i belongs to the positive class (yᵢ = 1).</p>
+            </div>
+        </div>
+
+        <!-- Slide 14: Sigmoid Derivative Proof -->
+        <div class="slide" id="slide14">
+            <h1>Sigmoid Function: Derivative Proof</h1>
+            
+            <div class="derivation-box">
+                <h3>Given: σ(z) = 1/(1 + e⁻ᶻ)</h3>
+                <p>Using quotient rule: For f(z) = g(z)/h(z), f'(z) = [h(z)·g'(z) - g(z)·h'(z)]/[h(z)]²</p>
+            </div>
+
+            <div class="formula-step">
+                <h3>Step-by-step derivation:</h3>
+                <p>Here: g(z) = 1, h(z) = 1 + e⁻ᶻ</p>
+                <p>So: g'(z) = 0, h'(z) = -e⁻ᶻ</p>
+                
+                <div class="equation">
+                    dσ/dz = [(1 + e⁻ᶻ)·0 - 1·(-e⁻ᶻ)]/(1 + e⁻ᶻ)²
+                </div>
+                <div class="equation">
+                    = e⁻ᶻ/(1 + e⁻ᶻ)²
+                </div>
+                
+                <p>Multiply numerator and denominator by eᶻ:</p>
+                <div class="equation">
+                    = 1/[(1 + e⁻ᶻ)(1 + eᶻ)]
+                </div>
+                <div class="equation">
+                    = 1/(1 + e⁻ᶻ) · 1/(1 + eᶻ)
+                </div>
+                
+                <p>Since 1/(1 + eᶻ) = 1 - 1/(1 + e⁻ᶻ):</p>
+                <div class="equation">
+                    <span class="highlight">dσ/dz = σ(z)[1 - σ(z)]</span>
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Beautiful Result:</strong> The sigmoid derivative is expressed in terms of the sigmoid itself! This will create elegant cancellations in our chain rule calculations.</p>
+            </div>
+        </div>
+
+        <!-- Slide 15: Binary Cross-Entropy Loss -->
+        <div class="slide" id="slide15">
+            <h1>Binary Cross-Entropy Loss Function</h1>
+            
+            <div class="derivation-box">
+                <h3>For a Single Sample:</h3>
+                <div class="equation">
+                    Lᵢ = -[yᵢ log(ŷᵢ) + (1-yᵢ) log(1-ŷᵢ)]
+                </div>
+                <p>where yᵢ ∈ {0, 1} is the true label</p>
+            </div>
+
+            <div class="two-column">
+                <div class="step-box">
+                    <h4>If yᵢ = 1 (positive class):</h4>
+                    <div class="equation">Lᵢ = -log(ŷᵢ)</div>
+                    <ul>
+                        <li>Loss small when ŷᵢ ≈ 1</li>
+                        <li>Loss explodes when ŷᵢ ≈ 0</li>
+                        <li>Encourages confident correct predictions</li>
+                    </ul>
+                </div>
+                <div class="step-box">
+                    <h4>If yᵢ = 0 (negative class):</h4>
+                    <div class="equation">Lᵢ = -log(1-ŷᵢ)</div>
+                    <ul>
+                        <li>Loss small when ŷᵢ ≈ 0</li>
+                        <li>Loss explodes when ŷᵢ ≈ 1</li>
+                        <li>Penalizes wrong confident predictions</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Total Loss (All Samples):</h3>
+                <div class="equation">
+                    ℒ(θ) = -∑ᵢ₌₁ᴺ[yᵢ log(ŷᵢ) + (1-yᵢ) log(1-ŷᵢ)]
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Why This Loss?</strong> Binary cross-entropy comes from maximum likelihood estimation - we're finding parameters that make our observed data most probable under the model.</p>
+            </div>
+        </div>
+
+        <!-- Slide 16: Chain Rule Strategy for Logistic Regression -->
+        <div class="slide" id="slide16">
+            <h1>Logistic Regression: Chain Rule Strategy</h1>
+            
+            <div class="key-insight">
+                <h3>Our Goal:</h3>
+                <p>Find ∂ℒ/∂w and ∂ℒ/∂w₀ (or equivalently ∂ℒ/∂w̃ where w̃ includes bias)</p>
+            </div>
+
+            <div class="step-box">
+                <h3>Chain of Dependencies:</h3>
+                <div class="equation">
+                    w → z → ŷ → ℒ
+                </div>
+                <p>Loss depends on weights through this chain of transformations</p>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Multivariate Chain Rule:</h3>
+                <div class="equation">
+                    <span class="highlight">∂ℒ/∂w̃ = (∂ℒ/∂ŷ) · (∂ŷ/∂z) · (∂z/∂w̃)</span>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3>Systematic Approach:</h3>
+                <ol>
+                    <li><strong>Step 1:</strong> Compute ∂ℒ/∂ŷ — how loss changes with predictions</li>
+                    <li><strong>Step 2:</strong> Compute ∂ŷ/∂z — how predictions change with linear combinations (sigmoid derivative)</li>
+                    <li><strong>Step 3:</strong> Compute ∂z/∂w̃ — how linear combinations change with weights (design matrix)</li>
+                    <li><strong>Step 4:</strong> Multiply using chain rule</li>
+                </ol>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Strategy Benefit:</strong> This ensures all partial derivatives are dimensionally consistent and mathematically coherent.</p>
+            </div>
+        </div>
+
+        <!-- Slide 17: Chain Rule Ingredients -->
+        <div class="slide" id="slide17">
+            <h1>Computing Chain Rule Components</h1>
+            
+            <div class="derivation-box">
+                <h3>Component 1: ∂ℒ/∂ŷᵢ</h3>
+                <p>For Lᵢ = -yᵢ log(ŷᵢ) - (1-yᵢ) log(1-ŷᵢ):</p>
+                <div class="equation">
+                    ∂Lᵢ/∂ŷᵢ = -yᵢ/ŷᵢ + (1-yᵢ)/(1-ŷᵢ)
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Component 2: ∂ŷᵢ/∂zᵢ</h3>
+                <p>Since ŷᵢ = σ(zᵢ) and we proved σ'(z) = σ(z)[1-σ(z)]:</p>
+                <div class="equation">
+                    ∂ŷᵢ/∂zᵢ = ŷᵢ(1-ŷᵢ)
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Single Sample Chain Rule:</h3>
+                <div class="equation">
+                    ∂Lᵢ/∂zᵢ = (∂Lᵢ/∂ŷᵢ) · (∂ŷᵢ/∂zᵢ)
+                </div>
+                <div class="equation">
+                    = [-yᵢ/ŷᵢ + (1-yᵢ)/(1-ŷᵢ)] · ŷᵢ(1-ŷᵢ)
+                </div>
+                <div class="equation">
+                    = -yᵢ(1-ŷᵢ) + (1-yᵢ)ŷᵢ
+                </div>
+                <div class="equation">
+                    = -yᵢ + yᵢŷᵢ + ŷᵢ - yᵢŷᵢ
+                </div>
+                <div class="equation">
+                    = <span class="highlight">ŷᵢ - yᵢ</span>
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Amazing Result:</strong> The complex chain rule simplifies to just ŷᵢ - yᵢ! This is the same form as linear regression.</p>
+            </div>
+        </div>
+
+        <!-- Slide 18: Matrix Formulation for Logistic Regression -->
+        <div class="slide" id="slide18">
+            <h1>Matrix Formulation & Vector Derivatives</h1>
+            
+            <div class="step-box">
+                <h3>Matrix Setup (same as linear regression):</h3>
+                <div class="equation">
+                    z = Aw̃, ŷ = σ(z), where σ is applied element-wise
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Derivative of z with respect to w̃:</h3>
+                <p>Since zᵢ = w₀ + w₁xᵢ₁ + w₂xᵢ₂ + ⋯ + wₓxᵢₓ:</p>
+                <div class="equation">
+                    ∂z/∂w̃ = A ∈ ℝᴺˣ⁽ᵈ⁺¹⁾
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Derivative of ŷ with respect to z:</h3>
+                <p>Since ŷᵢ only depends on zᵢ, this is a diagonal matrix:</p>
+                <div class="equation">
+                    ∂ŷ/∂z = diag[ŷ₁(1-ŷ₁), ŷ₂(1-ŷ₂), ..., ŷₙ(1-ŷₙ)] ∈ ℝᴺˣᴺ
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Derivative of ℒ with respect to ŷ:</h3>
+                <div class="equation">
+                    ∂ℒ/∂ŷ = <span class="matrix">-y₁/ŷ₁ + (1-y₁)/(1-ŷ₁)<br>-y₂/ŷ₂ + (1-y₂)/(1-ŷ₂)<br>⋮<br>-yₙ/ŷₙ + (1-yₙ)/(1-ŷₙ)</span> ∈ ℝᴺˣ¹
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 19: Chain Rule Application -->
+        <div class="slide" id="slide19">
+            <h1>Chain Rule Application: The Magic Cancellation</h1>
+            
+            <div class="derivation-box">
+                <h3>Step 1: Intermediate Gradient ∂ℒ/∂z</h3>
+                <div class="equation">
+                    ∂ℒ/∂z = (∂ℒ/∂ŷ)ᵀ · (∂ŷ/∂z)
+                </div>
+                <p>Multiplying row vector by diagonal matrix:</p>
+                <div class="equation">
+                    (∂ℒ/∂z)ᵢ = [-yᵢ/ŷᵢ + (1-yᵢ)/(1-ŷᵢ)] · ŷᵢ(1-ŷᵢ)
+                </div>
+            </div>
+
+            <div class="formula-step">
+                <h3>The Beautiful Cancellation:</h3>
+                <div class="equation">
+                    (∂ℒ/∂z)ᵢ = -yᵢ(1-ŷᵢ) + (1-yᵢ)ŷᵢ = ŷᵢ - yᵢ
+                </div>
+                <p>Therefore:</p>
+                <div class="equation">
+                    <span class="highlight">∂ℒ/∂z = ŷ - y</span>
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Step 2: Final Gradient</h3>
+                <div class="equation">
+                    ∂ℒ/∂w̃ = (∂z/∂w̃)ᵀ · (∂ℒ/∂z) = Aᵀ(ŷ - y)
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <h3>Remarkable Similarity:</h3>
+                <ul>
+                    <li><strong>Linear Regression:</strong> ∇ℒ = Aᵀ(ŷ - y)</li>
+                    <li><strong>Logistic Regression:</strong> ∇ℒ = Aᵀ(ŷ - y)</li>
+                    <li><strong>Same form!</strong> Only difference is how ŷ is computed</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 20: Why No Closed Form Solution -->
+        <div class="slide" id="slide20">
+            <h1>Why Logistic Regression Needs Gradient Descent</h1>
+            
+            <div class="step-box">
+                <h3>Setting Gradient to Zero:</h3>
+                <div class="equation">
+                    Aᵀ(ŷ - y) = 0
+                </div>
+                <p>But ŷ = σ(Aw̃), so:</p>
+                <div class="equation">
+                    Aᵀ(σ(Aw̃) - y) = 0
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <h3>The Fundamental Problem:</h3>
+                <p>This equation contains σ(Aw̃)! The sigmoid function makes this a <strong>transcendental equation</strong> with no algebraic solution.</p>
+            </div>
+
+            <div class="two-column">
+                <div class="step-box">
+                    <h4>Linear Regression (solvable):</h4>
+                    <div class="equation">
+                        ℒ = (1/2)||y - Aw̃||²
+                    </div>
+                    <p>Quadratic in w̃ → Normal equation</p>
+                    <div class="equation">
+                        w̃* = (AᵀA)⁻¹Aᵀy
+                    </div>
+                </div>
+                <div class="step-box">
+                    <h4>Logistic Regression (needs iteration):</h4>
+                    <div class="equation">
+                        ℒ = -∑[yᵢ log σ(Aw̃)ᵢ + (1-yᵢ) log(1-σ(Aw̃)ᵢ)]
+                    </div>
+                    <p>Transcendental → Gradient descent</p>
+                    <div class="equation">
+                        w̃⁽ᵗ⁺¹⁾ = w̃⁽ᵗ⁾ - α∇ℒ
+                    </div>
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Gradient Descent Algorithm:</h3>
+                <div class="equation">
+                    w̃⁽ᵗ⁺¹⁾ = w̃⁽ᵗ⁾ - α Aᵀ(ŷ⁽ᵗ⁾ - y)
+                </div>
+                <p>where α is the learning rate and ŷ⁽ᵗ⁾ = σ(Aw̃⁽ᵗ⁾)</p>
+            </div>
+        </div>
+
+        <!-- Slide 21: Neural Networks Introduction -->
+        <div class="slide" id="slide21">
+            <h1>Neural Networks: Stacking the Building Blocks</h1>
+            
+            <div class="key-insight">
+                <h3>The Central Insight:</h3>
+                <p>A neural network is logistic regression units stacked together, with each layer learning increasingly complex features!</p>
+            </div>
+
+            <div class="two-column">
+                <div class="step-box">
+                    <h4>Single Neuron (Logistic Regression):</h4>
+                    <div class="equation">
+                        ŷ = σ(wᵀx + b)
+                    </div>
+                    <p>Limited to linear decision boundaries</p>
+                </div>
+                <div class="step-box">
+                    <h4>Neural Network (Many Neurons):</h4>
+                    <div class="equation">
+                        h⁽¹⁾ = σ(W⁽¹⁾x + b⁽¹⁾)
+                    </div>
+                    <div class="equation">
+                        ŷ = σ(wᵀh⁽¹⁾ + b)
+                    </div>
+                    <p>Can learn complex non-linear patterns</p>
+                </div>
+            </div>
+
+            <div class="step-box">
+                <h3>What Each Layer Does:</h3>
+                <ol>
+                    <li><strong>Linear Transformation:</strong> Wx + b (weighted combination of inputs)</li>
+                    <li><strong>Non-linear Activation:</strong> σ(...) or ReLU(...) (introduces non-linearity)</li>
+                    <li><strong>Feature Learning:</strong> Each layer discovers useful representations</li>
+                </ol>
+            </div>
+
+            <div class="key-insight">
+                <p><strong>Universal Approximation:</strong> With enough hidden units, neural networks can approximate any continuous function arbitrarily well!</p>
+            </div>
+        </div>
+
+        <!-- Slide 22: Concrete Neural Network Example -->
+        <div class="slide" id="slide22">
+            <h1>Concrete Example: 2-2-1 Network</h1>
+            
+            <div class="step-box">
+                <h3>Architecture:</h3>
+                <ul>
+                    <li>Input layer: 2 features (x₁, x₂)</li>
+                    <li>Hidden layer: 2 neurons with ReLU activation</li>
+                    <li>Output layer: 1 neuron with sigmoid (binary classification)</li>
+                </ul>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Forward Pass Mathematics:</h3>
+                <div class="formula-step">
+                    <h4>Hidden Layer:</h4>
+                    <div class="equation">
+                        a⁽¹⁾ = W⁽¹⁾x + b⁽¹⁾ = <span class="matrix">w₁₁⁽¹⁾  w₁₂⁽¹⁾<br>w₂₁⁽¹⁾  w₂₂⁽¹⁾</span><span class="matrix">x₁<br>x₂</span> + <span class="matrix">b₁⁽¹⁾<br>b₂⁽¹⁾</span>
+                    </div>
+                    <div class="equation">
+                        h⁽¹⁾ = ReLU(a⁽¹⁾) = <span class="matrix">max(0, a₁⁽¹⁾)<br>max(0, a₂⁽¹⁾)</span>
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <h4>Output Layer:</h4>
+                    <div class="equation">
+                        z = wᵀh⁽¹⁾ + b = w₁h₁⁽¹⁾ + w₂h₂⁽¹⁾ + b
+                    </div>
+                    <div class="equation">
+                        ŷ = σ(z)
+                    </div>
+                </div>
+            </div>
+
+            <div class="dimensions-table">
+                <h3>Trainable Parameters:</h3>
+                <ul>
+                    <li>W⁽¹⁾: 4 parameters (2×2 weight matrix)</li>
+                    <li>b⁽¹⁾: 2 parameters (hidden biases)</li>
+                    <li>w: 2 parameters (output weights)</li>
+                    <li>b: 1 parameter (output bias)</li>
+                    <li><strong>Total: 9 parameters to optimize</strong></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Slide 23: Backpropagation Challenge -->
+        <div class="slide" id="slide23">
+            <h1>The Backpropagation Challenge</h1>
+            
+            <div class="key-insight">
+                <h3>The Training Objective:</h3>
+                <p>To train a neural network, we need ∂ℒ/∂θ for EVERY trainable parameter θ to know which direction to move each one.</p>
+            </div>
+
+            <div class="step-box">
+                <h3>For Our 2-2-1 Network, We Need:</h3>
+                <ul>
+                    <li>∂ℒ/∂W⁽¹⁾ (4 gradients for first layer weights)</li>
+                    <li>∂ℒ/∂b⁽¹⁾ (2 gradients for first layer biases)</li>
+                    <li>∂ℒ/∂w (2 gradients for output weights)</li>
+                    <li>∂ℒ/∂b (1 gradient for output bias)</li>
+                </ul>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Backpropagation Algorithm:</h3>
+                <ol>
+                    <li><strong>Forward Pass:</strong> Compute prediction ŷ</li>
+                    <li><strong>Compute Loss:</strong> ℒ = BCE(y, ŷ)</li>
+                    <li><strong>Backward Pass:</strong> Work backwards computing gradients</li>
+                    <li><strong>Update:</strong> θ ← θ - α∇θℒ for each parameter</li>
+                </ol>
+            </div>
+
+            <div class="key-insight">
+                <h3>Chain Rule in Action:</h3>
+                <div class="equation">
+                    ∂ℒ/∂W⁽¹⁾ = (∂ℒ/∂ŷ) × (∂ŷ/∂z) × (∂z/∂h⁽¹⁾) × (∂h⁽¹⁾/∂a⁽¹⁾) × (∂a⁽¹⁾/∂W⁽¹⁾)
+                </div>
+                <p>We compute each piece step by step, working backwards from the loss.</p>
+            </div>
+        </div>
+
+        <!-- Slide 24: Backpropagation Step by Step -->
+        <div class="slide" id="slide24">
+            <h1>Backpropagation: Complete Derivation</h1>
+            
+            <div class="derivation-box">
+                <h3>Output Layer Gradients:</h3>
+                <div class="formula-step">
+                    <h4>Pre-activation gradient:</h4>
+                    <div class="equation">
+                        ∂ℒ/∂z = ŷ - y (same as logistic regression!)
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <h4>Output bias:</h4>
+                    <div class="equation">
+                        ∂ℒ/∂b = ∂ℒ/∂z × ∂z/∂b = (ŷ - y) × 1 = ŷ - y
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <h4>Output weights:</h4>
+                    <div class="equation">
+                        ∂ℒ/∂w = ∂ℒ/∂z × ∂z/∂w = (ŷ - y) × h⁽¹⁾
+                    </div>
+                </div>
+            </div>
+
+            <div class="derivation-box">
+                <h3>Hidden Layer Gradients:</h3>
+                <div class="formula-step">
+                    <h4>Hidden activations:</h4>
+                    <div class="equation">
+                        ∂ℒ/∂h⁽¹⁾ = ∂ℒ/∂z × ∂z/∂h⁽¹⁾ = (ŷ - y) × w
+                    </div>
+                </div>
+                <div class="formula-step">
+                    <h4>Hidden pre-activations:</h4>
+                    <div class="equation">
+                        ∂ℒ/∂a⁽¹⁾ = ∂ℒ/∂h⁽¹⁾ ⊙ ReLU'(a⁽¹⁾)
+                    </div>
+                    <p>where ReLU'(a) = 1 if a > 0, else 0</p>
+                </div>
+                <div class="formula-step">
+                    <h4>First layer weights and biases:</h4>
+                    <div class="equation">
+                        ∂ℒ/∂W⁽¹⁾ = (∂ℒ/∂a⁽¹⁾)ᵀ xᵀ
+                    </div>
+                    <div class="equation">
+                        ∂ℒ/∂b⁽¹⁾ = ∂ℒ/∂a⁽¹⁾
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Slide 25: Summary - The Glass Box Revealed -->
+        <div class="slide" id="slide25">
+            <h1>The Glass Box Revealed</h1>
+            
+            <div class="key-insight">
+                <h2>The Universal Machine Learning Pattern:</h2>
+                <div class="equation">
+                    <span class="highlight">Model → Loss → Gradient → Update</span>
+                </div>
+            </div>
+
+            <div class="three-column">
+                <div class="step-box">
+                    <h3>Linear Regression:</h3>
+                    <ul>
+                        <li><strong>Model:</strong> ŷ = Aw̃</li>
+                        <li><strong>Loss:</strong> MSE</li>
+                        <li><strong>Solution:</strong> Closed form</li>
+                        <li><strong>Gradient:</strong> Aᵀ(ŷ - y)</li>
+                        <li><strong>Key:</strong> Convex, global optimum</li>
+                    </ul>
+                </div>
+                <div class="step-box">
+                    <h3>Logistic Regression:</h3>
+                    <ul>
+                        <li><strong>Model:</strong> ŷ = σ(Aw̃)</li>
+                        <li><strong>Loss:</strong> Cross-entropy</li>
+                        <li><strong>Solution:</strong> Gradient descent</li>
+                        <li><strong>Gradient:</strong> Aᵀ(ŷ - y)</li>
+                        <li><strong>Key:</strong> Same gradient form!</li>
+                    </ul>
+                </div>
+                <div class="step-box">
+                    <h3>Neural Networks:</h3>
+                    <ul>
+                        <li><strong>Model:</strong> Stacked layers</li>
+                        <li><strong>Loss:</strong> Same as logistic</li>
+                        <li><strong>Solution:</strong> Backpropagation</li>
+                        <li><strong>Gradient:</strong> Chain rule</li>
+                        <li><strong>Key:</strong> Universal approximator</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="key-insight">
+                <h3>What We've Learned:</h3>
+                <ul>
+                    <li><strong>Mathematics Unifies Everything:</strong> Same principles across all methods</li>
+                    <li><strong>Calculus is the Engine:</strong> Gradients tell us how to improve</li>
+                    <li><strong>Matrix Operations Enable Scale:</strong> Efficient computation for large datasets</li>
+                    <li><strong>Chain Rule Enables Depth:</strong> Backpropagation through complex networks</li>
+                    <li><strong>The Black Box is Now Glass:</strong> We understand every step!</li>
+                </ul>
+            </div>
+
+            <div class="derivation-box">
+                <h3>From Black Box to Glass Box Complete!</h3>
+                <p>We've systematically built understanding from linear combinations to deep learning, revealing the mathematical beauty that powers all of machine learning.</p>
+            </div>
+        </div>
+
+        <div class="navigation">
+            <button class="nav-btn" id="prevBtn" onclick="changeSlide(-1)" disabled>Previous</button>
+            <button class="nav-btn" id="nextBtn" onclick="changeSlide(1)">Next</button>
+        </div>
+
+        <div class="overlay"></div>
+        <div class="cursor-light"></div>
+    </div>
+
+    <script>
+        let currentSlide = 0;
+        const totalSlides = 25;
+
+        const overlay = document.querySelector('.overlay');
+        const cursorLight = document.querySelector('.cursor-light');
+        const neuralNetwork = document.getElementById('neuralNetwork');
+        let mouseX = 0;
+        let mouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            const percentX = (mouseX / window.innerWidth) * 100;
+            const percentY = (mouseY / window.innerHeight) * 100;
+            
+            overlay.style.setProperty('--mouse-x', percentX + '%');
+            overlay.style.setProperty('--mouse-y', percentY + '%');
+            
+            cursorLight.style.left = mouseX + 'px';
+            cursorLight.style.top = mouseY + 'px';
+        });
+
+        function createNeuralNetwork() {
+            const layers = [
+                { x: 8, nodes: 6, class: 'input-node', color: '#00ff64' },
+                { x: 25, nodes: 8, class: 'hidden1-node', color: '#0096ff' },
+                { x: 50, nodes: 10, class: 'hidden2-node', color: '#ff64ff' },
+                { x: 75, nodes: 6, class: 'hidden3-node', color: '#ffc800' },
+                { x: 92, nodes: 3, class: 'output-node', color: '#ff3232' }
+            ];
+
+            let allNodes = [];
+
+            layers.forEach((layer, layerIndex) => {
+                const layerNodes = [];
+                for (let i = 0; i < layer.nodes; i++) {
+                    const node = document.createElement('div');
+                    node.className = `node ${layer.class}`;
+                    
+                    const yPos = (100 / (layer.nodes + 1)) * (i + 1);
+                    node.style.left = `${layer.x}%`;
+                    node.style.top = `${yPos}%`;
+                    node.style.animationDelay = `${(layerIndex * 0.5 + i * 0.2)}s`;
+                    
+                    neuralNetwork.appendChild(node);
+                    layerNodes.push({ element: node, x: layer.x, y: yPos, color: layer.color });
+                }
+                allNodes.push(layerNodes);
+            });
+
+            for (let i = 0; i < allNodes.length - 1; i++) {
+                const currentLayer = allNodes[i];
+                const nextLayer = allNodes[i + 1];
+                
+                currentLayer.forEach((startNode, startIndex) => {
+                    const connectionsToMake = Math.min(3, nextLayer.length);
+                    for (let j = 0; j < connectionsToMake; j++) {
+                        const endIndex = Math.floor((j * nextLayer.length) / connectionsToMake);
+                        const endNode = nextLayer[endIndex];
+                        
+                        const wire = document.createElement('div');
+                        const isMainConnection = j === 0;
+                        wire.className = isMainConnection ? 'wire wire-thick' : 'wire';
+                        
+                        const deltaX = endNode.x - startNode.x;
+                        const deltaY = endNode.y - startNode.y;
+                        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                        const angle = Math.atan2(deltaY, deltaX) * 180 / Math.PI;
+                        
+                        wire.style.left = `${startNode.x}%`;
+                        wire.style.top = `${startNode.y}%`;
+                        wire.style.width = `${distance * window.innerWidth / 100}px`;
+                        wire.style.transform = `rotate(${angle}deg)`;
+                        wire.style.animationDelay = `${(i + j) * 0.5}s`;
+                        
+                        neuralNetwork.appendChild(wire);
+                    }
+                });
+            }
+
+            for (let i = 0; i < 6; i++) {
+                setTimeout(() => {
+                    const particle = document.createElement('div');
+                    particle.className = 'particle';
+                    particle.style.left = '0%';
+                    particle.style.top = `${30 + Math.random() * 40}%`;
+                    particle.style.animationDelay = `${i * 1.5}s`;
+                    neuralNetwork.appendChild(particle);
+                }, i * 800);
+            }
+        }
+
+        function updateSlideCounter() {
+            document.getElementById('slideNumber').textContent = currentSlide + 1;
+            document.getElementById('totalSlides').textContent = totalSlides + 1;
+        }
+
+        function showSlide(n) {
+            for (let i = 0; i <= totalSlides; i++) {
+                const slide = document.getElementById(`slide${i}`);
+                if (slide) {
+                    slide.classList.remove('active');
+                }
+            }
+            
+            const currentSlideElement = document.getElementById(`slide${n}`);
+            if (currentSlideElement) {
+                currentSlideElement.classList.add('active');
+            }
+            
+            document.getElementById('prevBtn').disabled = (n === 0);
+            document.getElementById('nextBtn').disabled = (n === totalSlides);
+            
+            updateSlideCounter();
+        }
+
+        function changeSlide(direction) {
+            const newSlide = currentSlide + direction;
+            if (newSlide >= 0 && newSlide <= totalSlides) {
+                currentSlide = newSlide;
+                showSlide(currentSlide);
+            }
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                changeSlide(-1);
+            } else if (e.key === 'ArrowRight') {
+                changeSlide(1);
+            }
+        });
+
+        createNeuralNetwork();
+        overlay.style.setProperty('--mouse-x', '50%');
+        overlay.style.setProperty('--mouse-y', '50%');
+        updateSlideCounter();
+    </script>
+</body>
+</html>
