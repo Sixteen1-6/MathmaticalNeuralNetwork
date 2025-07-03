@@ -17,32 +17,9 @@ You can view an interactive presentation by opening presentation/index.html
 
 Otherwise, you can explore the complete mathematical derivations found in the docs/ file.
 
-Also there is a section on the complete transformation of the mathmatical derivations to python code directly. This would be beneficial for a complete beginner to understand the foundations.
+Also, there is a section on the complete transformation of the mathematical derivations to Python code directly. This would be beneficial for a complete beginner to understand the foundations.
 
-
-MathematicalNeuralNetwork/ 
-
-├── 📄 README.md                       # You are here!
-
-├──  docs/                              # Mathematical derivations
-
-│       ├──  linear-regression-derivation.pdf
-
-│       ├──  logistic-regression-derivation.pdf
-
-│       └──  neural-network-backpropagation.pdf
-
-
-├──  presentation/                          # Interactive experience
-
-│       ├──  index.html                      # Main    
-
-├──  notebooks/                            # Implementation
-
-│       ├──  NeuralNetworkCode-Walkthrough.   # Complete implementation
-
-
-
+Project Directory Structure:
 ```
 MathematicalNeuralNetwork/
 ├── README.md                          # You are here!
